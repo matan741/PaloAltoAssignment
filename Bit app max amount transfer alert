@@ -1,0 +1,12 @@
+index=banktim amount>=3000 amount<=3600
+| eval current_day = strftime(now(), "%m/%d/%Y")
+| eval previous_day = strftime(relative_time(now(), "-1d@d"), "%m/%d/%Y")
+| eval current_day_start = "00:00"
+| eval current_day_end = "00:10"
+| eval previous_day_start = "23:50"
+| eval previous_day_end = "23:59"
+| eval event_date = strftime(_time, "%m/%d/%Y")
+| eval event_time = strftime(_time, "%H:%M")
+| stats count(eval(event_date = current_day AND event_time >= current_day_start AND event_time <= current_day_end)) as current_day_transfers,
+        count(eval(event_date = previous_day AND event_time >= previous_day_start AND event_time <= previous_day_end)) as previous_day_transfers
+| where current_day_transfers > 0 OR previous_day_transfers > 0

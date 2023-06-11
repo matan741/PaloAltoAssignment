@@ -1,0 +1,6 @@
+index=banktim
+| fields source_ip, country
+| lookup unauthorized_countries.csv src_ip AS source_ip OUTPUT unauthorized_countries as unauthorized_countries
+| eval unauthorized_countries = mvjoin(unauthorized_countries, ",")
+| where isnotnull(match(country, unauthorized_countries))
+| table _time, source_ip, country, unauthorized_countries

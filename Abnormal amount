@@ -1,0 +1,6 @@
+index=banktim source=banktim
+| eventstats count(transaction_id) as withdrawals_amount_by_transaction_id by customer_id
+| eventstats sum(amount) as total_amount_peer_customer by customer_id
+| eval calc_avg=total_amount_peer_customer/withdrawals_amount_by_transaction_id
+| where amount > calc_avg * 3 AND amount > 1000
+| table _time, customer_id, amount, calc_avg, transaction_id

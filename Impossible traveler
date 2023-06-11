@@ -1,0 +1,15 @@
+index=banktim source="banktim"
+| iplocation source_ip
+| eval latitude = if(isnull(lat), coordinates_latitude, lat)
+| eval longitude = if(isnull(lon), coordinates_longitude, lon)
+| streamstats current=f last(city) as previous_city, last(latitude) as previous_city_latitude, last(longitude) as previous_city_longitude, last(_time) as previous_time by customer_id
+| eval previous_time_formatted = strftime(previous_time, "%Y-%m-%d %H:%M:%S")
+| eval time_difference_in_minutes_between_events = round(-((_time - strptime(previous_time_formatted, "%Y-%m-%d %H:%M:%S")) / 60), 2)
+| eval rlat1 = pi() * latitude / 180, rlat2 = pi() * previous_city_latitude / 180, rlat = pi() * (previous_city_latitude - latitude) / 180, rlon = pi() * (previous_city_longitude - longitude) / 180
+| eval a = sin(rlat/2) * sin(rlat/2) + cos(rlat1) * cos(rlat2) * sin(rlon/2) * sin(rlon/2)
+| eval c = 2 * atan2(sqrt(a), sqrt(1-a))
+| eval distance = round(6371 * c, 0)
+| eval travel_time_hours = round(if(distance < 200, distance / 100, (distance / 650) + 3), 2)
+| where city != previous_city AND travel_time_hours > time_difference_in_minutes_between_events
+| dedup distance
+| table customer_id, _time, city, previous_time_formatted, previous_city, time_difference_in_minutes_between_events, travel_time_hours, distance
